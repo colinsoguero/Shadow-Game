@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class Webcam : MonoBehaviour
 {
-    WebCamTexture webcamTexture;
+    public static Webcam instance;
+    public WebCamTexture webcamTexture;
     Color[] pixels;
     public GameObject spritePrefab;
     GameObject mySprite;
@@ -12,16 +13,25 @@ public class Webcam : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        if(instance == null)
+        {
+            instance = this;
+        }
+        //WebCamDevice[] devices = WebCamTexture.devices;
         webcamTexture = new WebCamTexture();
         Renderer renderer = GetComponent<Renderer>();
         renderer.material.mainTexture = webcamTexture;
+        // foreach(WebCamDevice device in devices)
+        // {
+        //     Debug.Log("Name: " + device.name);
+        // }
         webcamTexture.Play();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetMouseButtonDown(0))
+        if(Input.GetKeyDown(KeyCode.L))
         {
             Debug.Log("pressed");
             TakeSnapshot();
@@ -31,19 +41,8 @@ public class Webcam : MonoBehaviour
     void TakeSnapshot()
     {
         if(mySprite)
-        {
             Destroy(mySprite);
-        }
-        Texture2D snap = new Texture2D(webcamTexture.width, webcamTexture.height);
-        snap.SetPixels(webcamTexture.GetPixels());
-        snap.Apply();
-        Threshold(snap);
-        Sprite snapSprite = Sprite.Create(snap, new Rect(0, 0, snap.width, snap.height), new Vector2(0.5f, 0.5f), 100f);
-        mySprite = Instantiate(spritePrefab);
-        mySprite.GetComponent<SpriteRenderer>().sprite = snapSprite;
-        mySprite.GetComponent<SpriteRenderer>().color = Color.black;
-        mySprite.AddComponent<PolygonCollider2D>();
-
+        StartCoroutine(Delay());
     }
 
     void Threshold(Texture2D img)
@@ -60,4 +59,24 @@ public class Webcam : MonoBehaviour
         img.SetPixels(pixels);
         img.Apply();
     }
+
+    void MakeSprite()
+    {
+        Texture2D snap = new Texture2D(webcamTexture.width, webcamTexture.height);
+        snap.SetPixels(webcamTexture.GetPixels());
+        snap.Apply();
+        Threshold(snap);
+        Sprite snapSprite = Sprite.Create(snap, new Rect(0, 0, snap.width, snap.height), new Vector2(0.5f, 0.5f), 100f);
+        mySprite = Instantiate(spritePrefab);
+        mySprite.GetComponent<SpriteRenderer>().sprite = snapSprite;
+        mySprite.GetComponent<SpriteRenderer>().color = Color.black;
+        mySprite.transform.localScale = Vector3.Scale(mySprite.transform.localScale, new Vector3(-1,1,1));
+        mySprite.AddComponent<PolygonCollider2D>();
+    }
+    IEnumerator Delay()
+    {
+        yield return new WaitForSeconds(0.25f);
+        MakeSprite();
+    }
+
 }

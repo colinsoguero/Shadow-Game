@@ -2,40 +2,62 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerMovement : MonoBehaviour
-{
-    public float movementSpeed;
-    public Rigidbody2D rb;
+public class PlayerMovement : MonoBehaviour {
 
-    public float jumpForce = 20f;
-    float mx;
-    public LayerMask groundLayers;
-    private void Update()
-    {
-        mx = Input.GetAxisRaw("Horizontal");
-        if(Input.GetButtonDown("Jump") && IsGrounded())
-            Jump();
-    }
+	public CharacterController2D controller;
 
-    private void FixedUpdate()
-    {
-        Vector2 movement = new Vector2(mx * movementSpeed, rb.velocity.y);
-        rb.velocity = movement; 
-    }
+    public Animator animator;
+    public Animator jumpSpin;
 
-    void Jump()
-    {
-        Vector2 movement = new Vector2(rb.velocity.x, jumpForce);
-        rb.velocity = movement;
-    }
+	public float runSpeed = 40f;
 
-    public bool IsGrounded()
-    {
-        Collider2D groundCheck = Physics2D.OverlapCircle(transform.position, 1f, groundLayers);
-        if(groundCheck != null)
+	float horizontalMove = 0f;
+	bool jump = false;
+	bool crouch = false;
+	
+	// Update is called once per frame
+	void Update () {
+
+		horizontalMove = Input.GetAxisRaw("Horizontal") * runSpeed;
+        animator.SetFloat("Speed", Mathf.Abs(horizontalMove));
+        jumpSpin.SetFloat("Speed", Mathf.Abs(horizontalMove));
+
+		if (Input.GetButtonDown("Jump"))
+		{
+			jump = true;
+            animator.SetTrigger("IsJumping");
+            jumpSpin.SetTrigger("IsJumping");
+		}
+                
+        if(Input.GetButtonDown("Reset"))
         {
-            return true;
+            LevelLoader.instance.Reset();
         }
-        return false;
+
+        if(Input.GetButtonDown("Next"))
+        {
+            LevelLoader.instance.LoadNextLevel();
+        }
+
+		if (Input.GetButtonDown("Crouch"))
+		{
+			crouch = true;
+		} else if (Input.GetButtonUp("Crouch"))
+		{
+			crouch = false;
+		}
+
+	}
+
+    public void OnLanding()
+    {
+        //animator.SetTrigger("IsJumping", false);
     }
+
+	void FixedUpdate ()
+	{
+		// Move our character
+		controller.Move(horizontalMove * Time.fixedDeltaTime, crouch, jump);
+		jump = false;
+	}
 }
